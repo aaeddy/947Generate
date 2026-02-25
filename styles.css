@@ -152,12 +152,14 @@ header h1 {
     display: flex;
     align-items: center;
     justify-content: center;
+    touch-action: none;
 }
 
 #mainCanvas {
     max-width: 100%;
     height: auto;
     display: none;
+    touch-action: none;
 }
 
 .placeholder {

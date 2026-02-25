@@ -54,6 +54,10 @@ class FaceReplacer {
         this.canvas.addEventListener('mouseup', () => this.handleMouseUp());
         this.canvas.addEventListener('mouseleave', () => this.handleMouseUp());
 
+        this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
+        this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+        this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
+
         document.addEventListener('keydown', (e) => this.handleKeyDown(e));
     }
 
@@ -94,14 +98,16 @@ class FaceReplacer {
         const imgWidth = this.mainImage.width;
         const imgHeight = this.mainImage.height;
 
+        const baseSize = Math.min(imgWidth, imgHeight) / 10;
+
         this.elements = {
             eyeLeft: {
                 name: 'eyeLeft',
                 displayName: '左眼',
                 x: imgWidth / 4,
                 y: imgHeight / 3,
-                width: 100,
-                height: 60,
+                width: baseSize * 1.5,
+                height: baseSize,
                 color: '#ff0000'
             },
             eyeRight: {
@@ -109,8 +115,8 @@ class FaceReplacer {
                 displayName: '右眼',
                 x: (imgWidth * 3) / 4,
                 y: imgHeight / 3,
-                width: 100,
-                height: 60,
+                width: baseSize * 1.5,
+                height: baseSize,
                 color: '#00ff00'
             },
             mouth: {
@@ -118,8 +124,8 @@ class FaceReplacer {
                 displayName: '嘴巴',
                 x: imgWidth / 2,
                 y: (imgHeight * 2) / 3,
-                width: 120,
-                height: 40,
+                width: baseSize * 2,
+                height: baseSize * 0.7,
                 color: '#0000ff'
             }
         };
@@ -171,13 +177,14 @@ class FaceReplacer {
         this.ctx.setLineDash([]);
 
         const handles = this.getHandles(elem);
+        const handleRadius = Math.max(8, Math.min(elem.width, elem.height) / 10);
         this.ctx.fillStyle = '#ffffff';
         this.ctx.strokeStyle = '#ff0000';
-        this.ctx.lineWidth = 1;
+        this.ctx.lineWidth = 2;
 
         Object.values(handles).forEach(handle => {
             this.ctx.beginPath();
-            this.ctx.arc(handle.x, handle.y, 5, 0, Math.PI * 2);
+            this.ctx.arc(handle.x, handle.y, handleRadius, 0, Math.PI * 2);
             this.ctx.fill();
             this.ctx.stroke();
         });
@@ -272,7 +279,7 @@ class FaceReplacer {
         if (!this.selectedElement) return null;
 
         const handles = this.getHandles(this.selectedElement);
-        const threshold = 10;
+        const threshold = Math.max(20, Math.min(this.selectedElement.width, this.selectedElement.height) / 5);
 
         for (const [name, handle] of Object.entries(handles)) {
             const dist = Math.sqrt(Math.pow(pos.x - handle.x, 2) + Math.pow(pos.y - handle.y, 2));
@@ -400,6 +407,76 @@ class FaceReplacer {
         link.click();
 
         this.previewContainer.innerHTML = `<img src="${dataURL}" alt="Result">`;
+    }
+
+    handleTouchStart(e) {
+        e.preventDefault();
+        if (!this.isProcessed) return;
+
+        const touch = e.touches[0];
+        const pos = this.getTouchPos(touch);
+
+        const handle = this.getClickedHandle(pos);
+        if (handle) {
+            this.resizeHandle = handle;
+            this.dragStart = pos;
+            return;
+        }
+
+        const elem = this.getClickedElement(pos);
+        if (elem) {
+            this.selectedElement = elem;
+            this.dragging = true;
+            this.dragStart = pos;
+            this.updateSelectedInfo();
+            this.draw();
+            return;
+        }
+
+        this.selectedElement = null;
+        this.updateSelectedInfo();
+        this.draw();
+    }
+
+    handleTouchMove(e) {
+        e.preventDefault();
+        if (!this.isProcessed) return;
+
+        const touch = e.touches[0];
+        const pos = this.getTouchPos(touch);
+
+        if (this.resizeHandle) {
+            this.handleResize(pos);
+            this.draw();
+            return;
+        }
+
+        if (this.dragging && this.selectedElement) {
+            const dx = pos.x - this.dragStart.x;
+            const dy = pos.y - this.dragStart.y;
+            this.selectedElement.x += dx;
+            this.selectedElement.y += dy;
+            this.dragStart = pos;
+            this.draw();
+            return;
+        }
+    }
+
+    handleTouchEnd(e) {
+        e.preventDefault();
+        this.dragging = false;
+        this.resizeHandle = null;
+        this.dragStart = null;
+    }
+
+    getTouchPos(touch) {
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+        return {
+            x: (touch.clientX - rect.left) * scaleX,
+            y: (touch.clientY - rect.top) * scaleY
+        };
     }
 }
 
