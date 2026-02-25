@@ -1,0 +1,20 @@
+{
+  "name": "facereplacer",
+  "version": "1.0.0",
+  "description": "FaceReplacer - 947",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve . -p 8080"
+  },
+  "keywords": [
+    "face",
+    "image",
+    "editor",
+    "canvas"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.2.0"
+  }
+}
