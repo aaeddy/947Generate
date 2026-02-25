@@ -3,3 +3,9 @@
 /face_replacer.spec
 /output.png
 /venv
+node_modules/
+.DS_Store
+*.log
+.env
+dist/
+build/

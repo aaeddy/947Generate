@@ -20,14 +20,31 @@ class FaceReplacer {
         };
 
         this.isProcessed = false;
+        this.loadDefaultPresets();
         this.initEventListeners();
+    }
+
+    loadDefaultPresets() {
+        const presetFiles = {
+            eyeLeft: 'preset_eye_left.png',
+            eyeRight: 'preset_eye_right.png',
+            mouth: 'preset_mouth.png'
+        };
+
+        Object.entries(presetFiles).forEach(([type, filename]) => {
+            const img = new Image();
+            img.onload = () => {
+                this.presets[type] = img;
+            };
+            img.onerror = () => {
+                console.warn(`无法加载预设图片: ${filename}`);
+            };
+            img.src = filename;
+        });
     }
 
     initEventListeners() {
         document.getElementById('imageInput').addEventListener('change', (e) => this.handleImageUpload(e));
-        document.getElementById('eyeLeftInput').addEventListener('change', (e) => this.handlePresetUpload(e, 'eyeLeft'));
-        document.getElementById('eyeRightInput').addEventListener('change', (e) => this.handlePresetUpload(e, 'eyeRight'));
-        document.getElementById('mouthInput').addEventListener('change', (e) => this.handlePresetUpload(e, 'mouth'));
         document.getElementById('processBtn').addEventListener('click', () => this.startProcessing());
         document.getElementById('resetBtn').addEventListener('click', () => this.resetElements());
         document.getElementById('saveBtn').addEventListener('click', () => this.saveResult());
@@ -55,21 +72,6 @@ class FaceReplacer {
                 this.placeholder.style.display = 'none';
                 document.getElementById('processBtn').disabled = false;
                 this.drawImage();
-            };
-            img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
-
-    handlePresetUpload(e, type) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const img = new Image();
-            img.onload = () => {
-                this.presets[type] = img;
             };
             img.src = event.target.result;
         };
